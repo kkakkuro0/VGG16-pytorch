@@ -58,7 +58,12 @@ def main(args):
 
     # Default parameters
     set_seed(args.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "mps")
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps:0"
+    else:
+        device = "cpu"
     logging.info(f"Device: {device}")
 
     # Dataset 정의
@@ -69,6 +74,9 @@ def main(args):
     valid_dataset = datasets.CIFAR10(
         root="./datasets/", train=True, download=True, transform=transforms.ToTensor()
     )
+    subset_indices = list(range(100))  # 인덱스를 조정하여 필요한 만큼의 데이터를 선택
+    train_dataset = torch.utils.data.Subset(train_dataset, subset_indices)
+    valid_dataset = torch.utils.data.Subset(valid_dataset, subset_indices)
 
     # DataLoader 정의
     logging.info("Setting DataLoader")
@@ -81,7 +89,7 @@ def main(args):
     )
     valid_loader = torch.utils.data.DataLoader(
         dataset=valid_dataset,
-        batch_size=1,
+        batch_size=16,
         shuffle=False,
         num_workers=1,
         drop_last=False,
